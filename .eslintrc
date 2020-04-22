@@ -1,0 +1,33 @@
+{
+  root: true,
+  "parser": "babel-eslint",
+  "extends": [
+    "airbnb-base",
+    "plugin:prettier/recommended"
+  ],
+  "plugins": [
+    "babel",
+    "promise"
+  ],
+  "env": {
+    "node" : true
+  },
+  "rules": {
+    "arrow-parens":                       0,
+    "function-paren-newline":             0,
+    "implicit-arrow-linebreak":           0,
+    "import/no-unresolved":               0,
+    "key-spacing":                        [0, { align: "value" }],
+    "max-len":                            [1, 120, 2, { ignoreComments: true }],
+    "newline-per-chained-call":           [2, { "ignoreChainWithDepth" : 2 }],
+    "no-console":                         "warn",
+    "no-else-return":                     [2, { "allowElseIf" : true }],
+    "no-multi-spaces":                    ["error", { exceptions: { "VariableDeclarator": true, "ImportDeclaration" : true } }],
+    "no-underscore-dangle":               0,
+    "no-unused-vars":                     ["warn", { "args" : "none" }],
+    "object-curly-newline":               [2, { "consistent": true }],
+    "prettier/prettier":                  "warn",
+    "semi":                               [2, "always" ],
+    "space-before-function-paren":        ["error", {"anonymous": "never", "named": "never", "asyncArrow" : "always"}],
+  }
+}
