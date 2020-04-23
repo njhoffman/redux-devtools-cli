@@ -4,6 +4,16 @@ const express = require('express');
 const app = express();
 const routes = require('./routes');
 const createStore = require('./store');
+const logger = require('./logger');
+
+const isJson = str => {
+  try {
+    JSON.parse(str);
+  } catch (e) {
+    return false;
+  }
+  return true;
+};
 
 class Worker extends SCWorker {
   run() {
@@ -16,10 +26,21 @@ class Worker extends SCWorker {
 
     app.use(routes(options, store, scServer));
 
-    scServer.addMiddleware(scServer.MIDDLEWARE_EMIT, function (req, next) {
+    let prevState;
+    scServer.addMiddleware(scServer.MIDDLEWARE_EMIT, (req, next) => {
       const channel = req.event;
       const { data } = req;
       if (channel.substr(0, 3) === 'sc-' || channel === 'respond' || channel === 'log') {
+        const { type, id, payload, action, nextActionId } = data;
+        if (type === 'ACTION') {
+          const state = isJson(payload) ? JSON.parse(payload) : payload;
+          const parsedAction = JSON.parse(action);
+          const { type: actionType, ...rest } = parsedAction;
+          const actionLogger = logger.getLogger(actionType);
+          actionLogger.info(`${id} #${nextActionId - 1}`, rest);
+          actionLogger.handle('differences', prevState, state);
+          prevState = state;
+        }
         scServer.exchange.publish(channel, data);
       } else if (channel === 'log-noid') {
         scServer.exchange.publish('log', { id: req.socket.id, data });
@@ -50,7 +71,7 @@ class Worker extends SCWorker {
         id,
         remoteAddress
       } = socket;
-      console.log(`Connected to ${remoteAddress} with app ${appName} : ${id}`);
+      logger.info(`Connected to ${id} ${remoteAddress} with app ${appName}`);
 
       socket.on('login', function (credentials, respond) {
         if (credentials === 'master') {
@@ -60,18 +81,22 @@ class Worker extends SCWorker {
           channelToWatch = 'log';
           channelToEmit = 'respond';
         }
+
+        logger.info(
+          `Logged in, watching channel: ${channelToWatch}, emitting on: ${channelToEmit}`
+        );
+
         this.exchange.subscribe(`sc-${socket.id}`).watch(msg => {
+          logger.debug(`Emitting to channel ${channelToWatch}:`, msg);
           socket.emit(channelToWatch, msg);
         });
-        console.log(
-          `Logged in, watching channel: ${channelToWatch}, emitting from ${channelToEmit}`
-        );
+
         respond(null, channelToWatch);
       });
 
-      socket.on('getReport', (id, respond) => {
+      socket.on('getReport', (reportId, respond) => {
         store
-          .get(id)
+          .get(reportId)
           .then(data => {
             respond(null, data);
           })
@@ -81,6 +106,7 @@ class Worker extends SCWorker {
       });
 
       socket.on('disconnect', function () {
+        logger.info(`Disconnecting ${socket.id}`);
         const channel = this.exchange.channel(`sc-${socket.id}`);
         channel.unsubscribe();
         channel.destroy();
