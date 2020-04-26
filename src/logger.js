@@ -11,12 +11,15 @@ const config = {
   logPrefix: 'level'
 };
 
+console.log('CHALK', chalk.level);
 const colors = {
   TRACE: chalk.magenta,
   DEBUG: chalk.cyan,
   INFO: chalk.blue,
   WARN: chalk.yellow,
-  ERROR: chalk.red
+  ERROR: chalk.red,
+  subsystem: chalk.hex('#aa8855'),
+  action: chalk.hex('#9977ff')
 };
 
 const padRight = (input, len) => {
@@ -29,10 +32,13 @@ const padZeros = (num, numZeros) => (Array(numZeros).join('0') + num).slice(-num
 prefix.reg(logger);
 logger.setLevel(config.logLevel);
 
-const levelPrefix = (level, name, timestamp) =>
-  `${chalk.gray(`[${timestamp}]`)} ${colors[level.toUpperCase()](
-    padRight(level, 5)
-  )} ${chalk.magenta(`${name}:`)}`;
+const levelPrefix = (level, name, timestamp) => {
+  return [
+    `${chalk.gray(`[${timestamp}]`)}`,
+    `${colors[level.toUpperCase()](padRight(level, 5))}`,
+    `${/[A-Z_0-9]/.test(name) ? colors.action(name) : colors.subsystem(name)}`
+  ].join(' ');
+};
 
 const prefixes = { level: levelPrefix };
 
