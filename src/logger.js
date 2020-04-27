@@ -11,7 +11,6 @@ const config = {
   logPrefix: 'level'
 };
 
-console.log('CHALK', chalk.level);
 const colors = {
   TRACE: chalk.magenta,
   DEBUG: chalk.cyan,

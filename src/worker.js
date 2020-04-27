@@ -34,7 +34,7 @@ class Worker extends SCWorker {
         const { type, id, payload, action, nextActionId } = data;
         if (type === 'ACTION') {
           const state = isJson(payload) ? JSON.parse(payload) : payload;
-          const parsedAction = JSON.parse(action);
+          const parsedAction = JSON.parse(action).action;
           const { type: actionType, ...rest } = parsedAction;
           const actionLogger = logger.getLogger(actionType);
           actionLogger.info(`${id} #${nextActionId - 1}`, rest);
